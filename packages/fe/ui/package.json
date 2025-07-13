@@ -11,6 +11,7 @@
   "dependencies": {
     "@vinxen/shared": "workspace:*",
     "react-router-dom": "^7.6.3",
-    "styled-components": "^6.1.19"
+    "styled-components": "^6.1.19",
+    "axios": "^1.10.0"
   }
 }
