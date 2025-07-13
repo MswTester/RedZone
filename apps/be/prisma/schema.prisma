@@ -50,5 +50,6 @@ model Log {
   id        Int      @id @default(autoincrement())
   level     Int      @default(0)
   message   String
+  solution  String
   timestamp DateTime @default(now())
 }

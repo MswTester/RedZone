@@ -6,7 +6,7 @@ import {
   Type,
 } from '@google/genai';
 
-async function analyzeImage(image: Buffer) {
+async function analyzeImage(image: string) {
   const ai = new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY,
   });
@@ -59,36 +59,36 @@ Message, Solution은 전부 한글로 적어줘.`,
   };
   const model = 'gemini-2.0-flash-lite';
   const contents = [
+    // {
+    //   role: 'user',
+    //   parts: [
+    //     {
+    //       inlineData: {
+    //         data: `INSERT_INPUT_HERE`,
+    //         mimeType: `image/png`,
+    //       },
+    //     },
+    //   ],
+    // },
+    // {
+    //   role: 'model',
+    //   parts: [
+    //     {
+    //       text: `{
+    //         "Accident": {
+    //           "Message": "해당 사진에서는 산업 재해를 확인할 수 없습니다.",
+    //           "Solution": "해당 없음",
+    //           "Tag": -1
+    //         }
+    //       }`,
+    //     },
+    //   ],
+    // },
     {
       role: 'user',
       parts: [
         {
-          inlineData: {
-            data: `INSERT_INPUT_HERE`,
-            mimeType: `image/png`,
-          },
-        },
-      ],
-    },
-    {
-      role: 'model',
-      parts: [
-        {
-          text: `{
-            "Accident": {
-              "Message": "해당 사진에서는 산업 재해를 확인할 수 없습니다.",
-              "Solution": "해당 없음",
-              "Tag": -1
-            }
-          }`,
-        },
-      ],
-    },
-    {
-      role: 'user',
-      parts: [
-        {
-          text: `${image.toString('base64')}`,
+          text: `${image}`,
         },
       ],
     },
@@ -103,3 +103,5 @@ Message, Solution은 전부 한글로 적어줘.`,
     return null;
   }
 }
+
+export { analyzeImage };

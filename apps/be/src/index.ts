@@ -38,7 +38,13 @@ const app = new Elysia()
         return createErrorResponse('`imageBase64` is required', 'VALIDATION_ERROR') as any;
       }
       const analysis = await analyzeImage(imageBase64);
-      return createSuccessResponse(analysis);
+      console.log(analysis["Accident"])
+      const log = await prisma.log.create({data: {
+        level: analysis?.["Accident"]?.Tag,
+        message: analysis?.["Accident"]?.Message,
+        solution: analysis?.["Accident"]?.Solution,
+      }})
+      return createSuccessResponse(log);
     } catch (err: any) {
       console.error('Gemini analysis failed', err);
       set.status = 500 as any;
