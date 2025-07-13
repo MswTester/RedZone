@@ -20,8 +20,11 @@ prisma.$connect().then(() => {
 const app = new Elysia()
   .decorate('prisma', prisma)
   .use(cors({
-    origin: '*',
+    origin: ['http://localhost:5173', 'http://localhost:3000'],
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    exposeHeaders: ['Content-Length', 'X-Foo', 'X-Bar']
   }))
   .use(swagger())
   // .use(auth(prisma))

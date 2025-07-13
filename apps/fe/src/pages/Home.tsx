@@ -96,6 +96,15 @@ const LogList = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
+  
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Hide scrollbar for IE, Edge and Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 `;
 
 interface LogEntry {
@@ -106,19 +115,94 @@ interface LogEntry {
 }
 
 export default function Home() {
-  const [logs, setLogs] = useState<LogEntry[]>([
-    {
-      tag: 5,
-      description: '작업자가 들고있던 커피를 쏟아 프레스가 오작동',
-      time: '2025-07-11 18:19:40',
-    },
-  ]);
-
   const webcamRef = useRef<Webcam>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const captureInterval = useRef<NodeJS.Timeout>();
   const imageAnalysis = useImageAnalysis();
   const { analyzeImage, isLoading, result } = imageAnalysis;
+  
+  const [allLogs, setAllLogs] = useState<LogEntry[]>([
+    {
+      tag: 1,
+      description: '작업자가 정비 중이던 기계에 손을 넣었다가 끼임 사고 발생',
+      time: '2025-07-13 08:42:15',
+      solution: '기계 정비 시 반드시 전원을 차단하고, 잠금표시(Lock-out Tag-out)를 의무화해야 합니다.'
+    },
+    {
+      tag: 6,
+      description: '지게차가 회전 중 작업자와 충돌',
+      time: '2025-07-13 09:10:27',
+      solution: '지게차 작업 구역을 명확히 구분하고, 작업자에게 반사 조끼 착용을 의무화하세요.'
+    },
+    {
+      tag: 3,
+      description: '강풍으로 인해 건축 자재가 날아가 보행자에게 비래 사고 발생',
+      time: '2025-07-13 09:45:02',
+      solution: '야외 자재는 고정장치로 묶고, 강풍 시 작업 중단 매뉴얼을 마련해야 합니다.'
+    },
+    {
+      tag: 9,
+      description: '노출된 전선에 의해 감전 사고 발생',
+      time: '2025-07-13 10:03:49',
+      solution: '배선은 보호 덮개로 차단하고, 주기적인 전기 설비 점검이 필요합니다.'
+    },
+    {
+      tag: 5,
+      description: '작업 중 안전모 미착용으로 인한 낙하물 충격',
+      time: '2025-07-13 10:31:08',
+      solution: '작업 시작 전 안전장비 착용 여부를 점검하고, 출입통제 구역을 명확히 해야 합니다.'
+    },
+    {
+      tag: 2,
+      description: '작업자가 미끄러운 바닥에서 넘어져 골절',
+      time: '2025-07-13 10:54:33',
+      solution: '바닥 정리 상태를 주기적으로 점검하고, 미끄럼 주의 표지를 설치하세요.'
+    },
+    {
+      tag: 11,
+      description: '무게 중심이 불안정한 자재 적재로 자재 붕괴 발생',
+      time: '2025-07-13 11:05:57',
+      solution: '자재 적재 시 균형을 유지하도록 기준을 명시하고, 정기 점검을 강화하세요.'
+    },
+    {
+      tag: 7,
+      description: '압축기가 폭발하면서 파편이 튀어 부상 발생',
+      time: '2025-07-13 11:17:29',
+      solution: '압축기 사용 전 상태 점검을 의무화하고, 노후 설비는 교체하세요.'
+    },
+    {
+      tag: 4,
+      description: '작업자가 고소작업 중 안전고리 미체결로 추락',
+      time: '2025-07-13 11:33:12',
+      solution: '고소작업 전 보호구 착용과 체결 여부를 철저히 확인해야 합니다.'
+    }
+  ]);
+  
+  const [selectedLogIndex, setSelectedLogIndex] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Filter logs based on search query
+  const filteredLogs = allLogs.filter(log => 
+    log.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
+  // Update logs when new analysis result is available
+  useEffect(() => {
+    if (result) {
+      const newLogs: LogEntry[] = (result.logs || []).map((log: any) => ({
+        tag: log.tag || 0,
+        description: log.description || '',
+        time: log.time || new Date().toLocaleString('ko-KR'),
+        solution: log.solution
+      }));
+      
+      setAllLogs((prevLogs: LogEntry[]) => [...newLogs, ...prevLogs]);
+    }
+  }, [result]);
+
+  const handleLogItemClick = (index: number) => {
+    setSelectedLogIndex(selectedLogIndex === index ? null : index);
+  };
 
   // Auto-capture image every 5 seconds when camera is active
   useEffect(() => {
@@ -162,9 +246,8 @@ export default function Home() {
   }, [result]);
 
   const handleSearch = (query: string) => {
-    // TODO: Replace with real navigation or search handling
-    console.log('검색어:', query);
-    alert(`검색: ${query}`);
+    setSearchQuery(query);
+    setSelectedLogIndex(null); // Reset selected log when searching
   };
 
   const startCamera = useCallback(() => {
@@ -205,14 +288,20 @@ export default function Home() {
       <RightPane>
         <SearchBar onSearch={handleSearch} />
         <LogList>
-          {logs.map((log, idx) => (
-            <LogItem 
-              key={`${log.time}-${idx}`}
-              tag={log.tag}
-              description={log.solution ? `${log.description} (해결 방법: ${log.solution})` : log.description}
-              time={log.time}
-            />
-          ))}
+          {filteredLogs.map((log, idx) => {
+            const logKey = `${log.time}-${idx}`;
+            return (
+              <LogItem 
+                key={logKey}
+                tag={log.tag}
+                description={log.description}
+                time={log.time}
+                solution={log.solution}
+                isSelected={selectedLogIndex === idx}
+                onClick={() => handleLogItemClick(idx)}
+              />
+            );
+          })}
         </LogList>
         <Footer />
       </RightPane>

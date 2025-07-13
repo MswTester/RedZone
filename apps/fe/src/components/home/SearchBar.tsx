@@ -18,7 +18,7 @@ const Input = styled.input`
   border: 1px solid ${({ theme }) => theme?.colors?.onSurfaceVariant || '#CCCCCC'};
   border-radius: 8px;
   background: ${({ theme }) => theme?.colors?.surface || '#FFFFFF'};
-  color: ${({ theme }) => theme?.colors?.onSurface || '#000000'};
+  color: ${({ theme }) => theme?.colors?.onBackground || '#000000'};
   font-size: 14px;
   outline: none;
 

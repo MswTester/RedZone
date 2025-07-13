@@ -45,7 +45,7 @@ export const Footer = () => {
   return (
     <Container>
       <HStack justifyContent="space-between" alignItems="center" padding="8px 0">
-        <GuideLink href="https://www.naver.com" target="_blank" rel="noopener noreferrer">
+        <GuideLink href="https://www.notion.so/22f1038bd92a80bca54ef2af058e6f6f?source=copy_link" target="_blank" rel="noopener noreferrer">
           <Text variant="bodySmall" color="onSurfaceVariant">
             가이드 확인하기
           </Text>
