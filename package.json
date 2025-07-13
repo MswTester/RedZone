@@ -11,5 +11,6 @@
     "build": "bun run build --recursive",
     "test": "bun test --recursive",
     "dev": "bun run dev --recursive"
-  }
+  },
+  "dependencies": {}
 }

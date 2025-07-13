@@ -1,0 +1,16 @@
+{
+  "name": "@vinxen/ui",
+  "version": "1.0.0",
+  "module": "exports.ts",
+  "main": "exports.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@vinxen/shared": "workspace:*",
+    "react-router-dom": "^7.6.3",
+    "styled-components": "^6.1.19"
+  }
+}
