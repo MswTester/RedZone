@@ -1,6 +1,6 @@
 import HttpService from '../services/network/HttpService';
 import CookieService from '../services/storage/CookieService';
-import { type RefreshResponse, RefreshResponseSchema } from '../schemas/auth';
+import { type RefreshResponse, RefreshResponseSchema } from '../../shared/schema/auth';
 
 export default class TokenManager {
   private static accessToken: string | null = null;
