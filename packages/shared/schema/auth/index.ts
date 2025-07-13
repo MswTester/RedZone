@@ -57,6 +57,11 @@ export const UserContextSchema = z.object({
   email: z.string().email(),
 });
 
+export const RefreshResponseSchema = z.object({
+  accessToken: z.string().min(10),
+  expiresIn: z.number().positive(),
+});
+
 // Type exports
 export type UserPublic = z.infer<typeof UserPublicSchema>;
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
@@ -66,6 +71,7 @@ export type RefreshTokenPayload = z.infer<typeof RefreshTokenPayloadSchema>;
 export type AuthTokens = z.infer<typeof AuthTokensSchema>;
 export type AuthResponse = z.infer<typeof AuthResponseSchema>;
 export type UserContext = z.infer<typeof UserContextSchema>;
+export type RefreshResponse = z.infer<typeof RefreshResponseSchema>;
 
 // Utility function to transform Prisma User to public user
 export const toPublicUser = (user: User): UserPublic => ({
