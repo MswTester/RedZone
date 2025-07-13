@@ -1,0 +1,16 @@
+{
+  "name": "@vinxen/gemini",
+  "version": "1.0.0",
+  "module": "exports.ts",
+  "main": "exports.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.11.1",
+    "@vinxen/shared": "workspace:*",
+    "@google/genai": "latest"
+  }
+}

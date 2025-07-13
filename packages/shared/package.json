@@ -1,0 +1,15 @@
+{
+  "name": "@vinxen/shared",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.ts",
+  "module": "index.ts",
+  "types": "index.ts",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
+  }
+}

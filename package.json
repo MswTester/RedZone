@@ -1,0 +1,15 @@
+{
+  "name": "vinxen",
+  "type": "module",
+  "private": true,
+  "workspaces": ["packages/shared", "packages/be/*", "packages/fe/*", "apps/*"],
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5"
+  },
+  "scripts": {
+    "build": "bun run build --recursive",
+    "test": "bun test --recursive",
+    "dev": "bun run dev --recursive"
+  }
+}

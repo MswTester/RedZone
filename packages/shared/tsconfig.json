@@ -1,0 +1,5 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": ["schema/**/*.ts", "types/**/*.ts", "generated/**/*.ts", "index.ts"],
+  "exclude": ["zod/**/*"]
+}
