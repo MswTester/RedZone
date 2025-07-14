@@ -9,14 +9,28 @@ export interface LogEntry {
 }
 
 export interface AnalysisResult {
-  logs: LogEntry[];
-  confidence: number;
+  // Response fields from the API
+  level: number;         // -1: no issue, 0-11: different types of hazards
+  message: string;       // Description of the detected issue
+  solution: string;      // Suggested solution
+  timestamp: string;     // When the response was generated
+  
+  // For backward compatibility
+  description?: string;  // Alias for message
+  time?: string;         // Alias for timestamp
+  
+  // Other possible fields
+  success?: boolean;     // Whether the API request was successful
 }
 
 export const useImageAnalysis = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+
+  function extractBase64Data(dataUrl: string): string {
+    return dataUrl.replace(/^data:image\/\w+;base64,/, '');
+  }  
 
   const analyzeImage = async (imageFile: File) => {
     setIsLoading(true);
@@ -39,13 +53,15 @@ export const useImageAnalysis = () => {
         reader.readAsDataURL(imageFile);
       });
 
+      const base64Data = extractBase64Data(imageBase64);
+
       // API 호출
       console.log('Sending image for analysis...');
       console.log('Image data size:', imageBase64.length, 'characters');
-      console.log('First 100 chars of image data:', imageBase64.substring(0, 100));
+      console.log('First 100 chars of image data:', base64Data.substring(0, 100));
       
-      const response = await axios.post<AnalysisResult>('/api/ai/gemini/analyze-image', {
-        imageBase64: imageBase64
+      const response = await axios.post('/api/ai/gemini/analyze-image', {
+        imageBase64: base64Data
       }, {
         withCredentials: true,
         headers: {
@@ -53,12 +69,36 @@ export const useImageAnalysis = () => {
         }
       });
 
-      // 응답 로깅
-      console.log('Analysis response:', response.data);
+      // Raw response logging
+      console.log('Raw response:', response);
+      console.log('Response data type:', typeof response.data);
+      console.log('Response data:', response.data);
       
-      // 응답 처리
-      setResult(response.data);
-      return response.data;
+      // Process the response data
+      const responseData = response.data;
+      
+      // Extract the nested data object from the response
+      const analysisData = responseData.data || responseData;
+      
+      console.log('Analysis data:', analysisData);
+      
+      // Create a properly formatted result object
+      const result: AnalysisResult = {
+        level: analysisData.level,
+        message: analysisData.message,
+        solution: analysisData.solution || '자세한 해결 방법은 관리자에게 문의해주세요.',
+        timestamp: analysisData.timestamp || new Date().toISOString(),
+        // Add aliases for backward compatibility
+        description: analysisData.message,
+        time: analysisData.timestamp || new Date().toISOString(),
+        success: analysisData.success
+      };
+      
+      console.log('Processed result:', result);
+      
+      // Update the state with the processed result
+      setResult(result);
+      return result;
     } catch (error: any) {
       if (error.response) {
         // 서버에서 응답이 왔지만 에러 상태 코드가 반환된 경우

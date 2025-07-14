@@ -20,8 +20,7 @@
     "socket.io-client": "^4.8.1",
     "styled-components": "^6.1.19",
     "zod": "^4.0.2",
-    "@vinxen/shared": "workspace:*",
-    "@vinxen/fe": "workspace:*"
+    "@vinxen/shared": "workspace:*"
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",

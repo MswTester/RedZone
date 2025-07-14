@@ -54,6 +54,38 @@ const CameraPlaceholder = styled.div`
   height: 100%;
 `;
 
+const TestButtonContainer = styled.div`
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+`;
+
+const TestButton = styled.button`
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 14px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+  width: 100%;
+  max-width: 300px;
+  
+  &:hover {
+    background-color: #45a049;
+  }
+  
+  &:active {
+    background-color: #3e8e41;
+  }
+`;
+
 const CameraButton = styled.button`
   padding: 12px 24px;
   background-color: #2196F3;
@@ -116,8 +148,8 @@ interface LogEntry {
 
 export default function Home() {
   const webcamRef = useRef<Webcam>(null);
+  const captureTimeout = useRef<NodeJS.Timeout>();
   const [isCameraActive, setIsCameraActive] = useState(false);
-  const captureInterval = useRef<NodeJS.Timeout>();
   const imageAnalysis = useImageAnalysis();
   const { analyzeImage, isLoading, result } = imageAnalysis;
   
@@ -135,22 +167,10 @@ export default function Home() {
       solution: '지게차 작업 구역을 명확히 구분하고, 작업자에게 반사 조끼 착용을 의무화하세요.'
     },
     {
-      tag: 3,
-      description: '강풍으로 인해 건축 자재가 날아가 보행자에게 비래 사고 발생',
-      time: '2025-07-13 09:45:02',
-      solution: '야외 자재는 고정장치로 묶고, 강풍 시 작업 중단 매뉴얼을 마련해야 합니다.'
-    },
-    {
       tag: 9,
       description: '노출된 전선에 의해 감전 사고 발생',
       time: '2025-07-13 10:03:49',
       solution: '배선은 보호 덮개로 차단하고, 주기적인 전기 설비 점검이 필요합니다.'
-    },
-    {
-      tag: 5,
-      description: '작업 중 안전모 미착용으로 인한 낙하물 충격',
-      time: '2025-07-13 10:31:08',
-      solution: '작업 시작 전 안전장비 착용 여부를 점검하고, 출입통제 구역을 명확히 해야 합니다.'
     },
     {
       tag: 2,
@@ -178,6 +198,9 @@ export default function Home() {
     }
   ]);
   
+  // Alias setAllLogs as setLogs for backward compatibility
+  const setLogs = setAllLogs;
+  
   const [selectedLogIndex, setSelectedLogIndex] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -188,15 +211,46 @@ export default function Home() {
   
   // Update logs when new analysis result is available
   useEffect(() => {
-    if (result) {
-      const newLogs: LogEntry[] = (result.logs || []).map((log: any) => ({
-        tag: log.tag || 0,
-        description: log.description || '',
-        time: log.time || new Date().toLocaleString('ko-KR'),
-        solution: log.solution
-      }));
+    if (!result) return;
+    
+    console.log('Analysis result received:', result);
+
+    try {
+      // Check if the response is in the expected format
+      // if (!result.Message || !result.Solution || result.Tag === undefined) {
+      //   console.log('Invalid response format, skipping...');
+      //   return;
+      // }
+
+      // Skip if no issue detected (tag = -1)
+      if (result.level === -1) {
+        console.log('No issues detected, skipping...');
+        return;
+      }
+
+      // Create a new log entry from the analysis result
+      const newLog: LogEntry = {
+        tag: result.level || 0,
+        description: result.message || '위험 상황이 감지되었습니다.',
+        time: result.timestamp || new Date().toISOString(),
+        solution: result.solution || '안전 조치가 필요합니다.'
+      };
       
-      setAllLogs((prevLogs: LogEntry[]) => [...newLogs, ...prevLogs]);
+      console.log('Adding new log entry:', newLog);
+      setAllLogs(prevLogs => [newLog, ...prevLogs]);
+      
+    } catch (error) {
+      console.error('Error processing analysis result:', error);
+      
+      // Add error log to the UI for better user feedback
+      const errorLog: LogEntry = {
+        tag: 0, // Default tag for errors
+        description: '분석 중 오류가 발생했습니다.',
+        time: new Date().toISOString(),
+        solution: '잠시 후 다시 시도해주세요.'
+      };
+      
+      setAllLogs(prevLogs => [errorLog, ...prevLogs]);
     }
   }, [result]);
 
@@ -204,46 +258,96 @@ export default function Home() {
     setSelectedLogIndex(selectedLogIndex === index ? null : index);
   };
 
-  // Auto-capture image every 5 seconds when camera is active
-  useEffect(() => {
-    if (isCameraActive && !isLoading) {
-      captureInterval.current = setInterval(async () => {
-        if (webcamRef.current) {
-          const imageSrc = webcamRef.current.getScreenshot();
-          if (imageSrc) {
-            try {
-              const response = await fetch(imageSrc);
-              const blob = await response.blob();
-              const file = new File([blob], 'capture.jpg', { type: 'image/jpeg' });
-              await analyzeImage(file);
-            } catch (error) {
-              console.error('Error capturing or analyzing image:', error);
-            }
-          }
-        }
-      }, 5000);
+  // Capture and analyze image when camera is active
+  const captureAndAnalyze = useCallback(async () => {
+    // Don't proceed if camera is off or we're already loading
+    if (!isCameraActive || !webcamRef.current) {
+      return;
     }
 
+    try {
+      const imageSrc = webcamRef.current.getScreenshot();
+      if (!imageSrc) {
+        console.log('No image captured, retrying...');
+        captureTimeout.current = setTimeout(captureAndAnalyze, 1000);
+        return;
+      }
+
+      const response = await fetch(imageSrc);
+      const blob = await response.blob();
+      const file = new File([blob], 'capture.jpg', { type: 'image/jpeg' });
+      
+      console.log('Sending image for analysis...');
+      await analyzeImage(file);
+      
+    } catch (error) {
+      console.error('Error in captureAndAnalyze:', error);
+    } finally {
+      // Always schedule the next capture, regardless of success/failure
+      // but only if the camera is still active
+      if (isCameraActive) {
+        console.log('Scheduling next capture in 5 seconds...');
+        captureTimeout.current = setTimeout(captureAndAnalyze, 5000);
+      }
+    }
+  }, [isCameraActive]);
+
+  // Start/stop the capture loop when camera active state changes
+  useEffect(() => {
+    if (isCameraActive) {
+      console.log('Starting auto-capture...');
+      captureAndAnalyze();
+    } else {
+      console.log('Auto-capture stopped');
+    }
+
+    // Cleanup function to clear any pending timeouts
     return () => {
-      if (captureInterval.current) {
-        clearInterval(captureInterval.current);
+      if (captureTimeout.current) {
+        console.log('Cleaning up capture timeout');
+        clearTimeout(captureTimeout.current);
       }
     };
-  }, [isCameraActive, isLoading, analyzeImage]);
+  }, [isCameraActive, captureAndAnalyze]);
 
   // Update logs when new analysis result is available
-  useEffect(() => {
-    if (result) {
-      const newLogs: LogEntry[] = result.logs.map(log => ({
-        tag: log.tag,
-        description: log.description,
-        time: log.time || new Date().toLocaleString('ko-KR'),
-        solution: log.solution
-      }));
+  // useEffect(() => {
+  //   if (!result) return;
+
+  //   console.log('Processing analysis result:', result);
+
+  //   try {
+  //     // Skip if no issue detected (level = -1)
+  //     if (result.level === -1) {
+  //       console.log('No issues detected, skipping...');
+  //       return;
+  //     }
       
-      setLogs(prevLogs => [...newLogs, ...prevLogs]);
-    }
-  }, [result]);
+  //     // Create a new log entry from the result
+  //     const newLog: LogEntry = {
+  //       tag: result.level,
+  //       description: result.message || result.description || '위험 상황이 감지되었습니다.',
+  //       time: result.timestamp || result.time || new Date().toISOString(),
+  //       solution: result.solution || '안전 조치가 필요합니다.'
+  //     };
+      
+  //     console.log('Adding new log entry:', newLog);
+  //     setLogs(prevLogs => [newLog, ...prevLogs]);
+      
+  //   } catch (error) {
+  //     console.error('Error processing analysis result:', error);
+      
+  //     // Add error log to the UI
+  //     const errorLog: LogEntry = {
+  //       tag: 0, // Error tag
+  //       description: '분석 중 오류가 발생했습니다.',
+  //       time: new Date().toISOString(),
+  //       solution: '잠시 후 다시 시도해주세요.'
+  //     };
+      
+  //     setLogs(prevLogs => [errorLog, ...prevLogs]);
+  //   }
+  // }, [result]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -254,9 +358,47 @@ export default function Home() {
     setIsCameraActive(true);
   }, []);
 
+  // Function to test with the sample image
+  const testWithSampleImage = useCallback(async () => {
+    try {
+      // Import the test image
+      const testImage = await import('../assets/images/r1.jpg');
+      
+      // Convert the image to a blob
+      const response = await fetch(testImage.default);
+      const blob = await response.blob();
+      
+      // Create a file from the blob
+      const file = new File([blob], 'r1.jpg', { type: 'image/jpeg' });
+      
+      // Analyze the image
+      await analyzeImage(file);
+      
+      console.log('Test image sent for analysis');
+    } catch (error) {
+      console.error('Error testing with sample image:', error);
+      
+      // Add error log to the UI
+      const errorLog: LogEntry = {
+        tag: 0,
+        description: '테스트 이미지 분석 중 오류가 발생했습니다.',
+        time: new Date().toISOString(),
+        solution: '나중에 다시 시도해주세요.'
+      };
+      
+      setAllLogs(prevLogs => [errorLog, ...prevLogs]);
+    }
+  }, [analyzeImage]);
+
+
   return (
     <Wrapper>
       <LeftPane>
+        <TestButtonContainer>
+          <TestButton onClick={testWithSampleImage}>
+            테스트 이미지로 분석하기
+          </TestButton>
+        </TestButtonContainer>
         <WebcamContainer>
           {isCameraActive ? (
             <Webcam

@@ -11,6 +11,9 @@ importers:
       '@types/socket.io-client':
         specifier: ^3.0.0
         version: 3.0.0
+      '@vinxen/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       axios:
         specifier: ^1.10.0
         version: 1.10.0

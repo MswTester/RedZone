@@ -11,7 +11,7 @@ async function analyzeImage(image: string) {
     apiKey: process.env.GEMINI_API_KEY,
   });
   const config = {
-    temperature: 0.1,
+    temperature: 0.7,
     maxOutputTokens: 4096,
     mediaResolution: MediaResolution.MEDIA_RESOLUTION_MEDIUM,
     safetySettings: [
@@ -52,24 +52,24 @@ async function analyzeImage(image: string) {
         {
           text: `현재 사진에서 발생한 산업 재해를 찾아줘.
 만약 사진에서 산업 재해를 찾을 수 없다면 빈 오브젝트를 반환해.
-Tag = -1:해당없음, 0:얽힘, 1:협착, 2:전도(넘어짐짐), 3:비래, 4:추락, 5:낙하, 6충돌, 7:폭발, 8:동작, 9:감전, 10:접촉, 11:붕괴
+Tag = -1:해당없음, 0:얽힘, 1:협착, 2:전도(넘어짐), 3:비래, 4:추락, 5:낙하, 6충돌, 7:폭발, 8:동작, 9:감전, 10:접촉, 11:붕괴
 Message, Solution은 전부 한글로 적어줘.`,
         }
     ],
   };
   const model = 'gemini-2.0-flash-lite';
   const contents = [
-    // {
-    //   role: 'user',
-    //   parts: [
-    //     {
-    //       inlineData: {
-    //         data: `INSERT_INPUT_HERE`,
-    //         mimeType: `image/png`,
-    //       },
-    //     },
-    //   ],
-    // },
+    {
+      role: 'user',
+      parts: [
+        {
+          inlineData: {
+            data: image,
+            mimeType: `image/png`,
+          },
+        },
+      ],
+    },
     // {
     //   role: 'model',
     //   parts: [
@@ -84,14 +84,14 @@ Message, Solution은 전부 한글로 적어줘.`,
     //     },
     //   ],
     // },
-    {
-      role: 'user',
-      parts: [
-        {
-          text: `${image}`,
-        },
-      ],
-    },
+    // {
+    //   role: 'user',
+    //   parts: [
+    //     {
+    //       text: `${image}`,
+    //     },
+    //   ],
+    // },
   ];
 
   const response = await ai.models.generateContent({model, config, contents});
